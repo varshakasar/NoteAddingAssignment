@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
+var config = require('../config/config.json');
 const router = express.Router();
 
 let userSchema = require('../models/userSchema.js');
@@ -69,13 +70,13 @@ router.post('/registerUser',(req,res,next) => {
                   host: 'req.host',
                   service: 'gmail',
                   auth: {
-                      user: 'emailid',
-                      pass: 'password'
+                      user: config.email,
+                      pass: config.password
                   }
               });
               let link = "http://" + req.get('host') + "/verify?email=" + email;
               let mailOptions = {
-                  from: 'varshagk1994@gmail.com',
+                  from: config.email,
                   to: 'varshagk1994@gmail.com',
                   subject: 'Confirm your mail account',
                   html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>"
