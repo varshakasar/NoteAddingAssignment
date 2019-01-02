@@ -69,8 +69,8 @@ router.post('/registerUser',(req,res,next) => {
                   host: 'req.host',
                   service: 'gmail',
                   auth: {
-                      user: 'varshagk1994@gmail.com',
-                      pass: '8412032207'
+                      user: 'emailid',
+                      pass: 'password'
                   }
               });
               let link = "http://" + req.get('host') + "/verify?email=" + email;
@@ -154,7 +154,6 @@ router.post('/login',(req,res,next) => {
         message: 'Incorrect password'
       })
       }
-
     } else {
       res.json({
         success: false,
