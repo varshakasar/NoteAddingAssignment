@@ -13,7 +13,6 @@ let Note = mongoose.model('note',noteSchema);
 
 router.post('/registerUser',(req,res,next) => {
 
-  //console.log('Inside register user');
   let email = req.body.email;
   let name = req.body.name;
   let age = req.body.age;
@@ -39,7 +38,12 @@ router.post('/registerUser',(req,res,next) => {
         success: false,
         message: "gender not defined."
       })
-    } else {
+    }else if ((typeof password == undefined) || password == "") {
+      res.json({
+        success: false,
+        message: "password not defined."
+      })
+    }else {
       User.findOne({
         email:email
       }).exec((err,result) =>{
