@@ -113,8 +113,7 @@ router.get('/verify', (req,res,next) => {
           else{
             res.json({
             success:true,
-            message:'User confirm successfully..',
-            data:result
+            message:'User confirm successfully..'
           })
           }
         });
@@ -259,10 +258,8 @@ function isVerified(req, res, next) {
 router.get('/isUserAuthenticated', (req, res) => {
   if (req.session.email && req.session.pass) {
     res.send("User is authenticated with email : " + req.session.email);
-    res.end();
   } else {
     res.send('Please,Login first');
-    res.end();
   }
 });
 router.get('/logout', (req, res, next) => {
