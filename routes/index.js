@@ -1,8 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-var config = require('../config/config.json');
+let config = require('../config/config.json');
+const redis = require("redis");
+const client = redis.createClient();
+
 const router = express.Router();
+
 
 let userSchema = require('../models/userSchema.js');
 let noteSchema = require('../models/noteSchema.js');
@@ -10,8 +14,23 @@ let noteSchema = require('../models/noteSchema.js');
 let User = mongoose.model('user', userSchema);
 let Note = mongoose.model('note',noteSchema);
 
+client.on("error", function (err) {
+    console.log("Error " + err);
+});
 
 
+router.get('/user',(req,res,next) => {
+  User.find({}).exec((err,result) => {
+    if(err){
+      next(err);
+    }else{
+      res.json({
+        success:true,
+        data:result
+      })
+    }
+  })
+})
 router.post('/registerUser',(req,res,next) => {
 
   let email = req.body.email;
@@ -136,6 +155,7 @@ router.post('/login',(req,res,next) => {
   }
   let email = req.body.email;
   let pass = req.body.pass;
+
    User.findOne({
     email:email
     }).exec((err, result) => {
@@ -144,6 +164,12 @@ router.post('/login',(req,res,next) => {
       if(result.isauthenticated == true && result.password == req.body.pass){
         req.session.email = req.body.email;
         req.session.pass = req.body.pass;
+
+        client.set("email", email);
+        client.get("email",(err,result) => {
+          console.log(result.toString());
+        })
+
         res.json({
         success: true,
         message: 'Valid User and login successfully'
@@ -163,27 +189,47 @@ router.post('/login',(req,res,next) => {
     }
   })
 })
-
-router.get('/note', isVerified ,(req, res, next) => {
+router.get('/notesByUser',(req, res, next) => {
+  Note.aggregate([{
+    $group: {
+      _id: '$user',
+      'Note Name': {
+        '$push': '$subject'
+      },
+      count: {
+        $sum: 1
+      }
+    }
+  }], (err, result) => {
+    if (err) {
+      next(err);
+    } else {
+      res.send(result);
+    }
+  })
+})
+router.get('/note',isVerified ,(req, res, next) => {
   Note.find({}).exec((err, result) => {
     if (err) {
       next(err);
     } else {
-      res.json({
+        res.json({
         success: true,
         data: result
       })
     }
   })
 })
-router.post('/note',isVerified ,(req,res,next) => {
+router.post('/note', isVerified ,(req,res,next) => {
   let subject = req.body.subject;
   let content = req.body.content;
   let tag = req.body.tag;
+  let user = req.body.user;
   let note = new Note({
     subject:subject,
     content:content,
-    tag:tag
+    tag:tag,
+    user:user
   });
   note.save((err,result) => {
     if(err){
@@ -200,16 +246,19 @@ router.post('/note',isVerified ,(req,res,next) => {
 
 router.put('/note/:id', isVerified ,function(req, res,next) {
 
-  var id = req.params.id;
-  var subject = req.body.subject;
-  var content = req.body.content;
-  var tag = req.body.tag;
-  var obj = {
+  let id = req.params.id;
+  let subject = req.body.subject;
+  let content = req.body.content;
+  let tag = req.body.tag;
+  let user = req.body.user;
+
+  let obj = {
     subject: subject,
     content:content,
-    tag:tag
+    tag:tag,
+    user:user
   };
-  var query = {
+  let query = {
     $set: obj
   };
   Note.findOneAndUpdate({
@@ -230,7 +279,7 @@ router.put('/note/:id', isVerified ,function(req, res,next) {
 })
 router.delete('/note/:id', isVerified ,function(req, res, next) {
 
-  var id = req.params.id;
+  let id = req.params.id;
   Note.findOneAndDelete({
       _id: id
     },

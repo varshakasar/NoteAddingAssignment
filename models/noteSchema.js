@@ -1,9 +1,10 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var note = new mongoose.Schema({
+let note = new mongoose.Schema({
 	subject:String,
   content: String,
-  tag:String
+  tag:String,
+  user:{type: mongoose.Schema.Types.ObjectId,ref:'user'}
 });
 
 module.exports = note;

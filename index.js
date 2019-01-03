@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+
 let app = express();
 let routes = require('./routes/index.js');
 mongoose.connect('mongodb://localhost/noteAddingAssignDb');
