@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 let config = require('../config/config.json');
 const redis = require("redis");
 const client = redis.createClient();
-
 const router = express.Router();
 
 
@@ -100,15 +99,18 @@ router.post('/registerUser',(req,res,next) => {
                   subject: 'Confirm your mail account',
                   html: "Hello,<br> Please Click on the link to verify your email.<br><a href=" + link + ">Click here to verify</a>"
               };
+
               transporter.sendMail(mailOptions,(err,result) => {
                 if(err){
                   next(err);
                 }else{
+                  // client.set('to',mailOptions.to);
+                  // client.set('email',req.query.email);
                   res.json({
-                success: true,
-                message: "User confirmation email sent successfully..",
-                data:result
-              });
+                  success: true,
+                  message: "User confirmation email sent successfully.. plz check inbox",
+                  data:result
+                  });
                 }
               })
 
@@ -119,6 +121,7 @@ router.post('/registerUser',(req,res,next) => {
     }
 })
 router.get('/verify', (req,res,next) => {
+
   User.findOneAndUpdate({
           email: req.query.email
         }, {
@@ -138,7 +141,6 @@ router.get('/verify', (req,res,next) => {
           }
         });
 })
-
 router.post('/login',(req,res,next) => {
 
   if ((typeof req.body.email == undefined) || req.body.email == "") {
@@ -165,10 +167,10 @@ router.post('/login',(req,res,next) => {
         req.session.email = req.body.email;
         req.session.pass = req.body.pass;
 
-        client.set("email", email);
-        client.get("email",(err,result) => {
-          console.log(result.toString());
-        })
+        // client.set("email", email);
+        // client.get("email",(err,result) => {
+        //   console.log(result.toString());
+        // })
 
         res.json({
         success: true,
