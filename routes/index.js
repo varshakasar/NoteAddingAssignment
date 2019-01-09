@@ -2,10 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 let config = require('../config/config.json');
-const redis = require("redis");
-const client = redis.createClient();
-const router = express.Router();
 
+const router = express.Router();
 
 let userSchema = require('../models/userSchema.js');
 let noteSchema = require('../models/noteSchema.js');
@@ -13,16 +11,19 @@ let noteSchema = require('../models/noteSchema.js');
 let User = mongoose.model('user', userSchema);
 let Note = mongoose.model('note',noteSchema);
 
-client.on("error", function (err) {
-    console.log("Error " + err);
+const cache = require('express-redis-cache')();
+
+cache.on('error', function(error) {
+  console.log('Cache error!');
+  console.log(error.stack);
 });
 
-
-router.get('/user',(req,res,next) => {
+router.get('/user',cache.route('user'),(req,res,next) => {
   User.find({}).exec((err,result) => {
     if(err){
       next(err);
     }else{
+      //console.log('abc');
       res.json({
         success:true,
         data:result
@@ -37,6 +38,7 @@ router.post('/registerUser',(req,res,next) => {
   let age = req.body.age;
   let gender = req.body.gender;
   let password = req.body.password;
+
   if ((typeof name == undefined) || name == "") {
       res.json({
         success: false,
@@ -104,8 +106,6 @@ router.post('/registerUser',(req,res,next) => {
                 if(err){
                   next(err);
                 }else{
-                  // client.set('to',mailOptions.to);
-                  // client.set('email',req.query.email);
                   res.json({
                   success: true,
                   message: "User confirmation email sent successfully.. plz check inbox",
@@ -141,7 +141,7 @@ router.get('/verify', (req,res,next) => {
           }
         });
 })
-router.post('/login',(req,res,next) => {
+router.post('/login',cache.route('user'),(req,res,next) => {
 
   if ((typeof req.body.email == undefined) || req.body.email == "") {
     return res.json({
@@ -167,11 +167,6 @@ router.post('/login',(req,res,next) => {
         req.session.email = req.body.email;
         req.session.pass = req.body.pass;
 
-        // client.set("email", email);
-        // client.get("email",(err,result) => {
-        //   console.log(result.toString());
-        // })
-
         res.json({
         success: true,
         message: 'Valid User and login successfully'
@@ -180,7 +175,7 @@ router.post('/login',(req,res,next) => {
       else{
         res.json({
         success: false,
-        message: 'Incorrect password'
+        message: 'User is not verified or Incorrect password'
       })
       }
     } else {
@@ -191,7 +186,7 @@ router.post('/login',(req,res,next) => {
     }
   })
 })
-router.get('/notesByUser',(req, res, next) => {
+router.get('/notesByUser',cache.route('user'),(req, res, next) => {
   Note.aggregate([{
     $group: {
       _id: '$user',
@@ -246,7 +241,7 @@ router.post('/note', isVerified ,(req,res,next) => {
   })
 })
 
-router.put('/note/:id', isVerified ,function(req, res,next) {
+router.put('/note/:id', isVerified ,function(req, res, next) {
 
   let id = req.params.id;
   let subject = req.body.subject;
@@ -306,14 +301,14 @@ function isVerified(req, res, next) {
     res.send('You are not logged in First Login..')
   }
 }
-router.get('/isUserAuthenticated', (req, res) => {
+router.get('/isUserAuthenticated', cache.route('user'),(req, res) => {
   if (req.session.email && req.session.pass) {
     res.send("User is authenticated with email : " + req.session.email);
   } else {
     res.send('Please,Login first');
   }
 });
-router.get('/logout', (req, res, next) => {
+router.get('/logout', cache.route('user'),(req, res, next) => {
   req.session.destroy(function(err) {
     if (err) {
       next(err);
@@ -322,4 +317,13 @@ router.get('/logout', (req, res, next) => {
     }
   });
 });
+
+
+cache.get(function (error, entries) {
+  if ( error ) throw error;
+
+  entries.forEach(console.log.bind(console));
+});
+
+
 module.exports = router;
