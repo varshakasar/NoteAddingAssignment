@@ -141,7 +141,7 @@ router.get('/verify', (req,res,next) => {
           }
         });
 })
-router.post('/login',cache.route('user'),(req,res,next) => {
+router.post('/login',(req,res,next) => {
 
   if ((typeof req.body.email == undefined) || req.body.email == "") {
     return res.json({
@@ -301,14 +301,14 @@ function isVerified(req, res, next) {
     res.send('You are not logged in First Login..')
   }
 }
-router.get('/isUserAuthenticated', cache.route('user'),(req, res) => {
+router.get('/isUserAuthenticated', (req, res) => {
   if (req.session.email && req.session.pass) {
     res.send("User is authenticated with email : " + req.session.email);
   } else {
     res.send('Please,Login first');
   }
 });
-router.get('/logout', cache.route('user'),(req, res, next) => {
+router.get('/logout', (req, res, next) => {
   req.session.destroy(function(err) {
     if (err) {
       next(err);
